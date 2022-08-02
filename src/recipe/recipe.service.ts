@@ -1,63 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Recipe } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GetAllRecipesQuery } from './dto/getAllRecipesQuery';
+import { GetAllRecipesQuery } from './input/getAllRecipesQuery';
+import { RecipeRepository } from './recipe.repository';
 
 @Injectable()
 export class RecipeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly recipeRepository: RecipeRepository,
+  ) {}
 
-  getRecipeById(
+  async getRecipeById(
     recipeWhereUniqueInput: Prisma.RecipeWhereUniqueInput,
   ): Promise<Recipe | null> {
-    return this.prisma.recipe.findUnique({
-      where: recipeWhereUniqueInput,
-    });
+    const recipe = await this.recipeRepository.getRecipeById(
+      recipeWhereUniqueInput,
+    );
+
+    if (!recipe) {
+      throw new NotFoundException(
+        'Recipe with id ' + recipeWhereUniqueInput.id + ' not found',
+      );
+    }
+
+    return recipe;
   }
 
   async getAllRecipes(params: GetAllRecipesQuery): Promise<Recipe[]> {
-    const { page, pageSize, search, order, sortBy } = params;
-    console.log(page, pageSize);
-    const take = pageSize;
-    const skip = page * take;
-    const whereQuery: Prisma.RecipeFindManyArgs = { skip, take };
-
-    if (search) {
-      whereQuery.where = {
-        OR: [
-          { name: { contains: search } },
-          { description: { contains: search } },
-        ],
-      };
-    }
-
-    if (sortBy) {
-      whereQuery.orderBy = { [sortBy]: order };
-    }
-
-    return this.prisma.recipe.findMany(whereQuery);
+    return this.recipeRepository.getAllRecipes(params);
   }
 
   async createRecipe(data: Prisma.RecipeCreateInput): Promise<Recipe> {
-    return this.prisma.recipe.create({
-      data,
-    });
+    return this.recipeRepository.createRecipe(data);
   }
 
   async updateRecipe(params: {
     where: Prisma.RecipeWhereUniqueInput;
     data: Prisma.RecipeUpdateInput;
   }): Promise<Recipe> {
-    const { where, data } = params;
-    return this.prisma.recipe.update({
-      where,
-      data,
-    });
+    const recipeToUpdate = await this.recipeRepository.getRecipeById(
+      params.where,
+    );
+
+    if (!recipeToUpdate)
+      throw new NotFoundException(
+        'Recipe with id ' + params.where.id + ' not found',
+      );
+
+    return this.recipeRepository.updateRecipe(params);
   }
 
   async deleteRecipe(where: Prisma.RecipeWhereUniqueInput): Promise<Recipe> {
-    return this.prisma.recipe.delete({
-      where,
-    });
+    const recipeToDelete = await this.recipeRepository.getRecipeById(where);
+
+    if (!recipeToDelete) {
+      throw new NotFoundException('Recipe with id ' + where.id + ' not found');
+    }
+
+    return this.recipeRepository.deleteRecipe(where);
   }
 }

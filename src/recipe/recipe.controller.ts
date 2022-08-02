@@ -9,8 +9,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { Recipe } from '@prisma/client';
-import { CreateRecipeDto } from './dto/createRecipe.dto';
-import { GetAllRecipesQuery } from './dto/getAllRecipesQuery';
+import { CreateRecipeBody } from './input/createRecipeBody';
+
+import { GetAllRecipesQuery } from './input/getAllRecipesQuery';
+import { UpdateRecipeBody } from './input/updateRecipeBody';
+
 import { RecipeService } from './recipe.service';
 
 @Controller('recipe')
@@ -33,7 +36,7 @@ export class RecipeController {
   @Post()
   async createRecipe(
     @Body()
-    data: CreateRecipeDto,
+    data: CreateRecipeBody,
   ): Promise<Recipe> {
     return await this.recipeService.createRecipe(data);
   }
@@ -42,7 +45,7 @@ export class RecipeController {
   async updateRecipe(
     @Param('id') id: string,
     @Body()
-    data: CreateRecipeDto,
+    data: UpdateRecipeBody,
   ): Promise<Recipe> {
     return this.recipeService.updateRecipe({ where: { id }, data });
   }

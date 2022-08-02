@@ -6,17 +6,25 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Recipe {
-  id          String @id @default(cuid())
+  id          String   @id @default(uuid())
   name        String
   description String
   image       String 
   ingredients String
   steps       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+model User {
+  id          String   @id @default(uuid()) 
+  login       String   @unique
+  password    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
 }
